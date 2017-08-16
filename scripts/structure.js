@@ -3,9 +3,8 @@ var animate = window.requestAnimationFrame || window.webkitRequestAnimationFrame
     };
 
     window.onload = function() {
-    document.body.appendChild(canvas);
-    animate(step);
-}
+
+
 var canvas = document.createElement("canvas");
 var width = 400;
 var height = 600;
@@ -17,48 +16,94 @@ var computer = new Computer();
 var ball = new Ball(200, 300);
 var playerScore = 0;
 var compScore = 0;
+const winningScore = 11;
+var showingWinScreen = false;
 
 var keysDown = {};
 
 var render = function () {
-    context.fillStyle = "#000000";
-    context.fillRect(0, 0, width, height);
-    player.render();
-    computer.render();
-    ball.render();
+  context.fillStyle = "#000000";
+  context.fillRect(0, 0, width, height);
+  player.render();
+  computer.render();
+  ball.render();
+
 };
 
 var update = function () {
-    player.update();
-    computer.update(ball);
-    ball.update(player.paddle, computer.paddle);
+  player.update();
+  computer.update(ball);
+  ball.update(player.paddle, computer.paddle);
+
 };
 
 var step = function () {
-    update();
-    render();
-    animate(step);
-    score();
+  update();
+  render();
+  animate(step);
+  score();
+  ballReset();
+
+
 };
 
-function score() {
-	context.fillStyle = 'white';
-	context.font = '24px serif';
-	context.fillText(playerScore, 10, 400);
-  context.fillText(compScore, 10, 300);
+function Paddle(x, y, width, height) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+  this.x_speed = 0;
+  this.y_speed = 0;
 }
 
-function Paddle(x, y, width, height) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.x_speed = 0;
-    this.y_speed = 0;
+function score() {
+  context.fillStyle = 'white';
+  context.font = '20px sans-serif';
+  context.fillText(playerScore, 10, 250);
+  context.fillText(compScore, 10, 320);
 }
+
+function ballReset() {
+  if(playerScore >= winningScore || compScore >= winningScore) {
+    showingWinScreen = true;
+    startOver();
+
+  }
+}
+
+function startOver() {
+  context.fillStyle = 'black';
+  context.fillRect(0, 0, 400,600);
+
+  if(showingWinScreen) {
+
+      if(playerScore >= winningScore) {
+        context.fillStyle = 'red';
+        context.font = '24px sans-serif'
+        context.fillText('Computer Won', 120, 200);
+      }else if(compScore >= winningScore) {
+        context.fillStyle = 'red';
+        context.font = '16px sans-serif'
+        context.fillText('Player Won', 120, 200);
+      }
+      context.fillStyle = 'white';
+      context.font = '12px sans-serif';
+      context.fillText('click to continue', 150, 500);
+  }
+}
+
+function clickToStart(evt) {
+  if(showingWinScreen) {
+    playerScore = 0;
+    compScore = 0;
+    showingWinScreen = false;
+  }
+}
+
+window.addEventListener('mousedown', clickToStart);
 
 Paddle.prototype.render = function () {
-    context.fillStyle = "#fff";
+    context.fillStyle = "#ffffff";
     context.fillRect(this.x, this.y, this.width, this.height);
 };
 
@@ -121,20 +166,6 @@ Player.prototype.update = function () {
     }
 };
 
-Paddle.prototype.move = function(x, y) {
-  this.x += x;
-  this.y += y;
-  this.x_speed = x;
-  this.y_speed = y;
-  if(this.x < 0) { // all the way to the left
-    this.x = 0;
-    this.x_speed = 0;
-  } else if (this.x + this.width > 400) { // all the way to the right
-    this.x = 400 - this.width;
-    this.x_speed = 0;
-  }
-}
-
 function Ball(x, y) {
     this.x = x;
     this.y = y;
@@ -145,7 +176,7 @@ function Ball(x, y) {
 Ball.prototype.render = function () {
     context.beginPath();
     context.arc(this.x, this.y, 5, 2 * Math.PI, false);
-    context.fillStyle = "#fff";
+    context.fillStyle = "#ffffff";
     context.fill();
 };
 
@@ -170,24 +201,23 @@ Ball.prototype.update = function (paddle1, paddle2) {
         this.y_speed = 3;
         this.x = 200;
         this.y = 300;
-          if(top_y >= 0) {
-        	   compScore++;
-
-          }else if(top_x >= 0) {
-        	   playerScore++;
+        if(top_y >= 0) {
+          playerScore++;
+          ballReset();
+        }else if(top_x >= 0) {
+          compScore++;
+          ballReset();
         }
     }
 
     if (top_y > 300) {
-        if (top_y < (paddle1.y + paddle1.height)
-        && bottom_y > paddle1.y && top_x < (paddle1.x + paddle1.width) && bottom_x > paddle1.x) {
+        if (top_y < (paddle1.y + paddle1.height) && bottom_y > paddle1.y && top_x < (paddle1.x + paddle1.width) && bottom_x > paddle1.x) {
             this.y_speed = -3;
             this.x_speed += (paddle1.x_speed / 2);
             this.y += this.y_speed;
         }
     } else {
-        if (top_y < (paddle2.y + paddle2.height) && bottom_y > paddle2.y && top_x < (paddle2.x + paddle2.width)
-        && bottom_x > paddle2.x) {
+        if (top_y < (paddle2.y + paddle2.height) && bottom_y > paddle2.y && top_x < (paddle2.x + paddle2.width) && bottom_x > paddle2.x) {
             this.y_speed = 3;
             this.x_speed += (paddle2.x_speed / 2);
             this.y += this.y_speed;
@@ -195,10 +225,15 @@ Ball.prototype.update = function (paddle1, paddle2) {
     }
 };
 
-window.addEventListener("keydown", function (event) {
-    keysDown[event.keyCode] = true;
-});
+  document.body.appendChild(canvas);
+  animate(step);
 
-window.addEventListener("keyup", function (event) {
-    delete keysDown[event.keyCode];
-});
+  window.addEventListener("keydown", function (event) {
+      keysDown[event.keyCode] = true;
+  });
+
+  window.addEventListener("keyup", function (event) {
+      delete keysDown[event.keyCode];
+  });
+
+}
