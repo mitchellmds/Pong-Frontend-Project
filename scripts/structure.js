@@ -2,7 +2,7 @@ var animate = window.requestAnimationFrame || window.webkitRequestAnimationFrame
         window.setTimeout(callback, 1000 / 60)
     };
 
-    window.onload = function() {
+window.onload = function() {
 
 
 var canvas = document.createElement("canvas");
